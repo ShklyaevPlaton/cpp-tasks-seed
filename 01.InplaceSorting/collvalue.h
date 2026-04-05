@@ -57,7 +57,8 @@ public:
     }
 
     // Для std::iota
-    CollectingValue& operator++() {
+    CollectingValue& operator++()
+    {
         ++value;
         return *this;
     }
