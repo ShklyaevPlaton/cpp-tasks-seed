@@ -9,6 +9,7 @@
 
 #include "base85ed.h"
 
+// TODO: remove this
 static std::vector<uint8_t> run_command_io(const std::string &command,
         const std::vector<uint8_t> &in)
 {
@@ -96,18 +97,21 @@ static std::vector<uint8_t> run_command_io(const std::string &command,
 }
 
 
+// TODO: implement this in C++
 std::vector<uint8_t> base85::encode(std::vector<uint8_t> const &bytes)
 {
     return run_command_io(
-               "/usr/bin/env -S python -c 'import sys; import base64; sys.stdout.buffer.write(base64.b85encode(sys.stdin.buffer.read()))'",
+               "/usr/bin/env -S python3 -c 'import sys; import base64; sys.stdout.buffer.write(base64.b85encode(sys.stdin.buffer.read()))'",
                bytes
            );
 }
 
+
+// TODO: implement this in C++
 std::vector<uint8_t> base85::decode(std::vector<uint8_t> const &b85str)
 {
     return run_command_io(
-               "/usr/bin/env -S python -c 'import sys; import base64; sys.stdout.buffer.write(base64.b85decode(sys.stdin.buffer.read()))'",
+               "/usr/bin/env -S python3 -c 'import sys; import base64; sys.stdout.buffer.write(base64.b85decode(sys.stdin.buffer.read()))'",
                b85str
            );
 }
