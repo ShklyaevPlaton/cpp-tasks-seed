@@ -1,7 +1,14 @@
 #!/bin/bash
 
-status=true
+set -e
 
-# ---------------------------------------------------
+echo "Integration tests..."
 
-$status
+./gauss AB.csv > result.csv
+
+if diff -w result.csv expected.csv; then
+    echo "Integration test passed"
+else
+    echo "Integration test failed"
+    exit 1
+fi
