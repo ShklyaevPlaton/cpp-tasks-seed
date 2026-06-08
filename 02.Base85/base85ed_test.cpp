@@ -121,7 +121,7 @@ TEST(Base85RoundTrip, AllZeros)
         const std::vector<uint8_t> zeros(length, 0);
 
         EXPECT_EQ(base85::decode(base85::encode(zeros)), zeros)
-            << "Failed for length " << length;
+                << "Failed for length " << length;
     }
 }
 
@@ -132,7 +132,7 @@ TEST(Base85RoundTrip, AllFF)
         const std::vector<uint8_t> ff(length, 0xFF);
 
         EXPECT_EQ(base85::decode(base85::encode(ff)), ff)
-            << "Failed for length " << length;
+                << "Failed for length " << length;
     }
 }
 
