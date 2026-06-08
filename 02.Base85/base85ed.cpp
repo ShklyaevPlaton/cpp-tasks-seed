@@ -1,72 +1,106 @@
 #include "base85ed.h"
-#include <array>
+
 #include <algorithm>
+#include <array>
+#include <cstdint>
+#include <vector>
 
 namespace base85 {
 
-// Алфавит
-const char ALPHABET[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~";
+namespace {
+
+constexpr char ALPHABET[] =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~";
+
+constexpr std::size_t BASE = 85;
+constexpr std::size_t BLOCK_BYTES = 4;
+constexpr std::size_t BLOCK_CHARS = 5;
+
+std::array<int, 256> make_lookup() {
+    std::array<int, 256> lookup{};
+    lookup.fill(-1);
+
+    for (int i = 0; i < static_cast<int>(BASE); ++i) {
+        lookup[static_cast<unsigned char>(ALPHABET[i])] = i;
+    }
+
+    return lookup;
+}
+
+}  // namespace
 
 std::vector<uint8_t> encode(std::vector<uint8_t> const &bytes) {
     std::vector<uint8_t> out;
-    out.reserve((bytes.size() + 3) / 4 * 5);
-    
-    for (size_t i = 0; i < bytes.size(); i += 4) {
-        uint32_t val = 0;
-        size_t cnt = 0;
-        
-        // 4 байт
-        for (size_t j = 0; j < 4 && i + j < bytes.size(); ++j) {
-            val = (val << 8) | bytes[i + j];
-            cnt++;
+    out.reserve((bytes.size() + BLOCK_BYTES - 1) / BLOCK_BYTES * BLOCK_CHARS);
+
+    for (std::size_t i = 0; i < bytes.size(); i += BLOCK_BYTES) {
+        const std::size_t count = std::min(BLOCK_BYTES, bytes.size() - i);
+
+        uint32_t value = 0;
+
+        for (std::size_t j = 0; j < count; ++j) {
+            value = (value << 8) | bytes[i + j];
         }
-        
-        if (cnt == 0) break;
-        val <<= (8 * (4 - cnt)); // нули
-        
-        // -> 5 символов
-        uint8_t block[5];
-        for (int j = 4; j >= 0; --j) {
-            block[j] = ALPHABET[val % 85];
-            val /= 85;
+
+        value <<= 8 * (BLOCK_BYTES - count);
+
+        std::array<uint8_t, BLOCK_CHARS> block{};
+
+        for (int j = static_cast<int>(BLOCK_CHARS) - 1; j >= 0; --j) {
+            block[j] = static_cast<uint8_t>(ALPHABET[value % BASE]);
+            value /= BASE;
         }
-        
-        out.insert(out.end(), block, block + (cnt < 4 ? cnt + 1 : 5));
+
+        const std::size_t output_count = count < BLOCK_BYTES ? count + 1 : BLOCK_CHARS;
+
+        out.insert(out.end(), block.begin(), block.begin() + output_count);
     }
+
     return out;
 }
 
 std::vector<uint8_t> decode(std::vector<uint8_t> const &b85str) {
-    if (b85str.empty()) return {};
-    
-    std::array<int, 256> lookup;
-    lookup.fill(-1);
-    for (int i = 0; i < 85; ++i) {
-        lookup[(unsigned char)ALPHABET[i]] = i;
+    if (b85str.empty()) {
+        return {};
     }
-    
+
+    const auto lookup = make_lookup();
+
     std::vector<uint8_t> out;
-    out.reserve(b85str.size() / 5 * 4 + 4);
-    
-    for (size_t i = 0; i < b85str.size(); i += 5) {
-        size_t cnt = std::min<size_t>(5, b85str.size() - i);
-        
-        uint32_t val = 0;
-        for (size_t j = 0; j < cnt; ++j) {
-            int v = lookup[b85str[i + j]];
-            if (v == -1) return {};
-            val = val * 85 + v;
+    out.reserve(b85str.size() / BLOCK_CHARS * BLOCK_BYTES + BLOCK_BYTES);
+
+    for (std::size_t i = 0; i < b85str.size(); i += BLOCK_CHARS) {
+        const std::size_t count = std::min(BLOCK_CHARS, b85str.size() - i);
+
+        uint64_t value = 0;
+
+        for (std::size_t j = 0; j < count; ++j) {
+            const int digit = lookup[b85str[i + j]];
+
+            if (digit < 0) {
+                return {};
+            }
+
+            value = value * BASE + static_cast<uint64_t>(digit);
         }
-        
-        for (size_t j = cnt; j < 5; ++j) {
-            val = val * 85 + 84; 
+
+        for (std::size_t j = count; j < BLOCK_CHARS; ++j) {
+            value = value * BASE + (BASE - 1);
         }
-        
-        for (int j = cnt - 1; j > 0; --j) {
-            out.push_back((val >> (8 * (j - 1))) & 0xFF);
+
+        if (value > 0xFFFFFFFFULL) {
+            return {};
+        }
+
+        const std::size_t output_count = count < BLOCK_CHARS ? count - 1 : BLOCK_BYTES;
+
+        for (std::size_t j = 0; j < output_count; ++j) {
+            const int shift = static_cast<int>(8 * (BLOCK_BYTES - 1 - j));
+            out.push_back(static_cast<uint8_t>((value >> shift) & 0xFF));
         }
     }
+
     return out;
 }
 
-} // namespace base85
+}  // namespace base85
