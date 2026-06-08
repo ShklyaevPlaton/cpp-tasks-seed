@@ -12,14 +12,7 @@ GaussMatrix load_csv_to_matrix(const char *filename) {
 
     lazycsv::parser parser{filename};
 
-    bool is_first_row = true;
-
     for (const auto row : parser) {
-        if (is_first_row) {
-            is_first_row = false;
-            continue;
-        }
-
         std::vector<double> current_row;
 
         for (const auto cell : row) {
