@@ -25,11 +25,16 @@ TEST(GaussSolve, SolvesTwoByTwoSystem)
 {
     GaussMatrix ab(2, 3);
 
-    ab << 2.0, 1.0, 5.0,
-        1.0, -1.0, 1.0;
+    ab(0, 0) = 2.0;
+    ab(0, 1) = 1.0;
+    ab(0, 2) = 5.0;
+    ab(1, 0) = 1.0;
+    ab(1, 1) = -1.0;
+    ab(1, 2) = 1.0;
 
     GaussVector expected(2);
-    expected << 2.0, 1.0;
+    expected(0) = 2.0;
+    expected(1) = 1.0;
 
     expect_vector_near(Gauss_solve(ab), expected);
 }
@@ -38,12 +43,23 @@ TEST(GaussSolve, SolvesThreeByThreeSystem)
 {
     GaussMatrix ab(3, 4);
 
-    ab << 2.0, 1.0, -1.0, 8.0,
-        -3.0, -1.0, 2.0, -11.0,
-        -2.0, 1.0, 2.0, -3.0;
+    ab(0, 0) = 2.0;
+    ab(0, 1) = 1.0;
+    ab(0, 2) = -1.0;
+    ab(0, 3) = 8.0;
+    ab(1, 0) = -3.0;
+    ab(1, 1) = -1.0;
+    ab(1, 2) = 2.0;
+    ab(1, 3) = -11.0;
+    ab(2, 0) = -2.0;
+    ab(2, 1) = 1.0;
+    ab(2, 2) = 2.0;
+    ab(2, 3) = -3.0;
 
     GaussVector expected(3);
-    expected << 2.0, 3.0, -1.0;
+    expected(0) = 2.0;
+    expected(1) = 3.0;
+    expected(2) = -1.0;
 
     expect_vector_near(Gauss_solve(ab), expected);
 }
@@ -52,11 +68,16 @@ TEST(GaussSolve, UsesPivotingWhenFirstPivotIsZero)
 {
     GaussMatrix ab(2, 3);
 
-    ab << 0.0, 2.0, 4.0,
-        1.0, 1.0, 3.0;
+    ab(0, 0) = 0.0;
+    ab(0, 1) = 2.0;
+    ab(0, 2) = 4.0;
+    ab(1, 0) = 1.0;
+    ab(1, 1) = 1.0;
+    ab(1, 2) = 3.0;
 
     GaussVector expected(2);
-    expected << 1.0, 2.0;
+    expected(0) = 1.0;
+    expected(1) = 2.0;
 
     expect_vector_near(Gauss_solve(ab), expected);
 }
@@ -65,8 +86,12 @@ TEST(GaussSolve, ThrowsOnSingularMatrix)
 {
     GaussMatrix ab(2, 3);
 
-    ab << 1.0, 2.0, 3.0,
-        2.0, 4.0, 6.0;
+    ab(0, 0) = 1.0;
+    ab(0, 1) = 2.0;
+    ab(0, 2) = 3.0;
+    ab(1, 0) = 2.0;
+    ab(1, 1) = 4.0;
+    ab(1, 2) = 6.0;
 
     EXPECT_THROW(Gauss_solve(ab), std::runtime_error);
 }
@@ -75,8 +100,10 @@ TEST(GaussSolve, ThrowsOnWrongAugmentedMatrixSize)
 {
     GaussMatrix ab(2, 2);
 
-    ab << 1.0, 2.0,
-        3.0, 4.0;
+    ab(0, 0) = 1.0;
+    ab(0, 1) = 2.0;
+    ab(1, 0) = 3.0;
+    ab(1, 1) = 4.0;
 
     EXPECT_THROW(Gauss_solve(ab), std::invalid_argument);
 }
