@@ -1,46 +1,65 @@
-#include <string>
-#include <iomanip>
-#include <lazycsv.hpp>
-
 #include "util.h"
 
-GaussMatrix load_csv_to_matrix(const char *filename)
-{
-    std::vector<std::vector<double>> rcsv{};
-    {
-        lazycsv::parser parser{ filename };
-        for (const auto row : parser)
-        {
-            std::vector<double> r{};
-            for (const auto cell : row)
-            {
-                r.push_back(std::stod(std::string(cell.raw())));
-            }
-            rcsv.push_back(r);
+#include <iomanip>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#include "lazycsv.hpp"
+
+GaussMatrix load_csv_to_matrix(const char *filename) {
+    std::vector<std::vector<double>> values;
+
+    lazycsv::parser parser{filename};
+
+    bool is_first_row = true;
+
+    for (const auto row : parser) {
+        if (is_first_row) {
+            is_first_row = false;
+            continue;
+        }
+
+        std::vector<double> current_row;
+
+        for (const auto cell : row) {
+            current_row.push_back(std::stod(std::string(cell.raw())));
+        }
+
+        if (!values.empty() && current_row.size() != values.front().size()) {
+            throw std::runtime_error("CSV rows have different sizes");
+        }
+
+        values.push_back(current_row);
+    }
+
+    if (values.empty()) {
+        throw std::runtime_error("CSV file is empty");
+    }
+
+    GaussMatrix matrix(values.size(), values.front().size());
+
+    for (int i = 0; i < static_cast<int>(values.size()); ++i) {
+        for (int j = 0; j < static_cast<int>(values[i].size()); ++j) {
+            matrix(i, j) = values[i][j];
         }
     }
 
-    return GaussMatrix(rcsv.size(), rcsv.begin()->size());
+    return matrix;
 }
 
-void print_matrix_as_csv(std::ostream& out, const GaussMatrix &matrix, int prec)
-{
-    for (int j = 0; j < matrix.cols(); ++j)
-        out << "A,";
-    out << "B\n";
-
+void print_matrix_as_csv(std::ostream &out, const GaussMatrix &matrix, int prec) {
     out << std::fixed << std::setprecision(prec);
 
-    for (int i = 0; i < matrix.rows(); ++i)
-    {
-        for (int j = 0; j < matrix.cols(); ++j)
-        {
+    for (int i = 0; i < matrix.rows(); ++i) {
+        for (int j = 0; j < matrix.cols(); ++j) {
             out << matrix(i, j);
-            if (j < matrix.cols() - 1)
-            {
+
+            if (j + 1 < matrix.cols()) {
                 out << ',';
             }
         }
+
         out << '\n';
     }
 }
