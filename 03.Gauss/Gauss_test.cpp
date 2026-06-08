@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <random>
 #include <stdexcept>
 
 #include "Gauss_solve.h"
@@ -78,6 +79,44 @@ TEST(GaussSolve, UsesPivotingWhenFirstPivotIsZero)
     GaussVector expected(2);
     expected(0) = 1.0;
     expected(1) = 2.0;
+
+    expect_vector_near(Gauss_solve(ab), expected);
+}
+
+TEST(GaussSolve, SolvesGeneratedReproducibleSystem)
+{
+    constexpr int size = 40;
+
+    std::mt19937 generator(12345);
+    std::uniform_real_distribution<double> distribution(-10.0, 10.0);
+
+    GaussMatrix a(size, size);
+    GaussVector expected(size);
+
+    for (int row = 0; row < size; ++row)
+    {
+        expected(row) = distribution(generator);
+
+        for (int col = 0; col < size; ++col)
+        {
+            a(row, col) = distribution(generator);
+        }
+
+        a(row, row) += 500.0;
+    }
+
+    GaussVector b = a * expected;
+    GaussMatrix ab(size, size + 1);
+
+    for (int row = 0; row < size; ++row)
+    {
+        for (int col = 0; col < size; ++col)
+        {
+            ab(row, col) = a(row, col);
+        }
+
+        ab(row, size) = b(row);
+    }
 
     expect_vector_near(Gauss_solve(ab), expected);
 }
